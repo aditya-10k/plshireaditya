@@ -5,6 +5,7 @@ Sends role-tailored resumes with verified attachments via Gmail SMTP.
 
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import smtplib
@@ -17,6 +18,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Optional
 
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -209,6 +211,81 @@ katheaditya10@gmail.com | +91 9326956422"""
     else:
         logger.warning("No valid resume file available to attach (user must paste PDF into data/resumes/)")
 
+    # Check for HTTPS relay providers (Port 443 - never blocked by cloud firewalls)
+    webhook_url = os.getenv("GMAIL_WEBHOOK_URL")
+    brevo_key = os.getenv("BREVO_API_KEY")
+    resend_key = os.getenv("RESEND_API_KEY")
+
+    pdf_base64 = ""
+    pdf_filename = "AdityaKathe_Resume.pdf"
+    if resume_path and resume_path.exists():
+        pdf_filename = resume_path.name
+        pdf_base64 = base64.b64encode(resume_path.read_bytes()).decode("utf-8")
+
+    # 1. Google Apps Script Webhook (Native Gmail relay over HTTPS port 443)
+    if webhook_url:
+        try:
+            resp = requests.post(
+                webhook_url,
+                json={
+                    "to": recipient,
+                    "subject": subject,
+                    "body": body,
+                    "filename": pdf_filename,
+                    "pdf_base64": pdf_base64,
+                },
+                timeout=20,
+            )
+            logger.info("Dispatched resume email via Google Apps Script HTTPS webhook: %s", resp.status_code)
+            return {"status": "sent", "recipient": recipient, "role": role_str, "provider": "gmail_webhook"}
+        except Exception as ew:
+            logger.error("Failed to send via GMAIL_WEBHOOK_URL: %s", ew)
+
+    # 2. Brevo HTTPS REST API (Port 443)
+    if brevo_key:
+        try:
+            resp = requests.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": brevo_key, "Content-Type": "application/json"},
+                json={
+                    "sender": {"name": "Aditya Kathe", "email": user or "katheaditya10@gmail.com"},
+                    "to": [{"email": recipient}],
+                    "subject": subject,
+                    "textContent": body,
+                    "attachment": [{"name": pdf_filename, "content": pdf_base64}] if pdf_base64 else [],
+                },
+                timeout=15,
+            )
+            if resp.status_code in (200, 201, 202):
+                logger.info("Dispatched resume email via Brevo HTTPS API to %s", recipient)
+                return {"status": "sent", "recipient": recipient, "role": role_str, "provider": "brevo"}
+            else:
+                logger.warning("Brevo API returned error %s: %s", resp.status_code, resp.text)
+        except Exception as eb:
+            logger.error("Failed to send via Brevo API: %s", eb)
+
+    # 3. Resend HTTPS REST API (Port 443)
+    if resend_key:
+        try:
+            resp = requests.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                json={
+                    "from": "Aditya Kathe <onboarding@resend.dev>",
+                    "to": [recipient],
+                    "subject": subject,
+                    "text": body,
+                    "attachments": [{"filename": pdf_filename, "content": pdf_base64}] if pdf_base64 else [],
+                },
+                timeout=15,
+            )
+            if resp.status_code in (200, 201, 202):
+                logger.info("Dispatched resume email via Resend HTTPS API to %s", recipient)
+                return {"status": "sent", "recipient": recipient, "role": role_str, "provider": "resend"}
+        except Exception as er:
+            logger.error("Failed to send via Resend API: %s", er)
+
+    # 4. Fallback to direct SMTP (works on localhost or environments without outbound port restrictions)
     sent_successfully = False
     last_error = None
 
