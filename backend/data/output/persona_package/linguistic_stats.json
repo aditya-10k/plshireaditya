@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-09-12T19:42:31.373781+00:00",
+  "profile_type": "linguistic_stats",
+  "surface_statistics": {
+    "total_turns_analyzed": 2750,
+    "terminal_punctuation": {
+      "zero_terminal_punctuation": 0.925,
+      "question_mark": 0.232,
+      "exclamation_mark": 0.038,
+      "period": 0.021
+    },
+    "casing_distribution": {
+      "all_lowercase": 0.435,
+      "mixed_case": 0.548,
+      "all_caps": 0.017
+    },
+    "length_distribution": {
+      "mean_words_per_turn": 8.4,
+      "median_words_per_turn": 6.0,
+      "percentile_25": 3,
+      "percentile_75": 12,
+      "percentile_90": 21
+    },
+    "burstiness": {
+      "single_bubble_ratio": 0.556,
+      "multi_bubble_ratio": 0.444,
+      "mean_bubbles_per_turn": 1.86
+    },
+    "lexical_richness": {
+      "hapax_legomena_ratio": 0.506,
+      "vocabulary_size": 4320
+    }
+  },
+  "syntactic_statistics": {
+    "clause_structure": {
+      "verbless_fragments": 0.254,
+      "simple_clauses": 0.574,
+      "compound_clauses": 0.136,
+      "complex_subordination": 0.036
+    },
+    "speech_acts": {
+      "declarative": 0.702,
+      "interrogative": 0.232,
+      "imperative": 0.066
+    },
+    "negation_frequency": 0.216,
+    "pronoun_orientation": {
+      "self_pronoun_ratio": 0.727,
+      "other_pronoun_ratio": 0.273,
+      "self_to_other_ratio": 2.66
+    }
+  },
+  "language_mixing_statistics": {
+    "code_switched_turns": 0.482,
+    "hindi_token_share": 0.728,
+    "english_token_share": 0.272,
+    "matrix_language": "Hindi (Hinglish)"
+  }
+}

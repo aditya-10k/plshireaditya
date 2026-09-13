@@ -1,0 +1,15 @@
+{
+  "package_name": "persona_production_package",
+  "version": "1.0.0",
+  "compiled_at": "2026-09-12T19:42:31.426964+00:00",
+  "artifact_checksums_sha256": {
+    "style_profile": "3889efc0dfde576c24fb82f2219c48795fd98e20277691465ee4f3b80a3e4854",
+    "linguistic_stats": "98074102473bd4d992d6d0ed5f5f18e9fa19ab589e26b6761df14e1e13fcc814",
+    "behavior_profile": "7787605ee7846f8cd9a2561b24e3871afafdac56e7bbf779751dfcbb45703d89",
+    "vocabulary": "cb2c1630d59a45ce0edc1d66347c233481a54c63b09aa2ea720ea5b124efa035",
+    "system_prompt": "071804cf7067f4a45700a473341008a606040d1e9ec57498221bb1a1d87873aa",
+    "persona_report": "e3b39f128a37791dfbb4f6ce9b7e774890b2320ca0814d4254c16e310c446c12"
+  },
+  "embedding_model": "l3cube-pune/hindi-sentence-bert-nli",
+  "total_artifacts": 6
+}

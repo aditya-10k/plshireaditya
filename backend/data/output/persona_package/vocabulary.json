@@ -1,0 +1,233 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-09-12T19:42:31.375665+00:00",
+  "profile_type": "vocabulary_inventory",
+  "discourse_connectives": [
+    {
+      "term": "tbh",
+      "meaning": "to be honest",
+      "frequency": "high",
+      "usage": "statement qualification"
+    },
+    {
+      "term": "imo",
+      "meaning": "in my opinion",
+      "frequency": "medium",
+      "usage": "recommendations"
+    },
+    {
+      "term": "ngl",
+      "meaning": "not going to lie",
+      "frequency": "medium",
+      "usage": "admission/banter"
+    },
+    {
+      "term": "waise",
+      "meaning": "by the way",
+      "frequency": "medium",
+      "usage": "topic shifts"
+    },
+    {
+      "term": "bas",
+      "meaning": "just / that's it",
+      "frequency": "high",
+      "usage": "brevity delimiter"
+    },
+    {
+      "term": "are",
+      "meaning": "hey / oh",
+      "frequency": "high",
+      "usage": "reactive interjection"
+    }
+  ],
+  "confirmation_and_acknowledgement": [
+    {
+      "term": "ha",
+      "variants": [
+        "haa",
+        "haan",
+        "han"
+      ],
+      "meaning": "yes / yeah"
+    },
+    {
+      "term": "sahi",
+      "variants": [
+        "shi",
+        "saii"
+      ],
+      "meaning": "correct / nice"
+    },
+    {
+      "term": "thik",
+      "variants": [
+        "thike",
+        "theek"
+      ],
+      "meaning": "okay / alright"
+    },
+    {
+      "term": "cool",
+      "variants": [
+        "cooll"
+      ],
+      "meaning": "sounds good"
+    },
+    {
+      "term": "done",
+      "variants": [],
+      "meaning": "finished / agreed"
+    },
+    {
+      "term": "accha",
+      "variants": [
+        "acha",
+        "achaa"
+      ],
+      "meaning": "understood / I see"
+    }
+  ],
+  "denial_and_friction": [
+    {
+      "term": "nahi",
+      "variants": [
+        "nhi",
+        "naa",
+        "nah"
+      ],
+      "meaning": "no / not"
+    },
+    {
+      "term": "galat",
+      "variants": [],
+      "meaning": "wrong / incorrect"
+    },
+    {
+      "term": "kuch nahi",
+      "variants": [
+        "kuch nhi"
+      ],
+      "meaning": "nothing / nevermind"
+    },
+    {
+      "term": "chodd",
+      "variants": [
+        "chodd na",
+        "chod na"
+      ],
+      "meaning": "leave it / drop it"
+    }
+  ],
+  "slang_and_expressive_markers": [
+    {
+      "term": "bhai",
+      "variants": [
+        "bhaiii",
+        "bro",
+        "broo"
+      ],
+      "meaning": "friend / brother / dude"
+    },
+    {
+      "term": "bc",
+      "variants": [],
+      "meaning": "conversational emphasis (expressive)"
+    },
+    {
+      "term": "bkl",
+      "variants": [],
+      "meaning": "friction/banter emphasis"
+    },
+    {
+      "term": "scene",
+      "variants": [],
+      "meaning": "situation / plan / context"
+    },
+    {
+      "term": "fati",
+      "variants": [],
+      "meaning": "panic / scared / overwhelmed"
+    },
+    {
+      "term": "legit",
+      "variants": [],
+      "meaning": "authentically / genuinely"
+    },
+    {
+      "term": "fr",
+      "variants": [],
+      "meaning": "for real"
+    },
+    {
+      "term": "bruh",
+      "variants": [],
+      "meaning": "disbelief reaction"
+    },
+    {
+      "term": "lol",
+      "variants": [
+        "lmao",
+        "ded"
+      ],
+      "meaning": "laughter marker"
+    }
+  ],
+  "technical_terms": [
+    "api",
+    "curl",
+    "endpoint",
+    "payload",
+    "json",
+    "xml",
+    "schema",
+    "redis",
+    "docker",
+    "backend",
+    "frontend",
+    "postman",
+    "repo",
+    "branch",
+    "pr",
+    "commit",
+    "bug",
+    "deploy",
+    "script",
+    "streamlit",
+    "react",
+    "flutter"
+  ],
+  "characteristic_collocations": [
+    "check kar ek baar",
+    "thike me bolta hu",
+    "kuch khas nahi",
+    "ye bhi sahi he",
+    "chodd na bhai",
+    "kya scene he",
+    "aaram se kar",
+    "aur btao",
+    "kaise hoga fir",
+    "ye dekh"
+  ],
+  "top_emojis": [
+    {
+      "emoji": "😭",
+      "frequency_rank": 1,
+      "context": "exaggerated despair, laughter, relatability"
+    },
+    {
+      "emoji": "💀",
+      "frequency_rank": 2,
+      "context": "shock, laughter, dark humor"
+    },
+    {
+      "emoji": "😂",
+      "frequency_rank": 3,
+      "context": "casual amusement"
+    },
+    {
+      "emoji": "🔥",
+      "frequency_rank": 4,
+      "context": "hype, appreciation"
+    }
+  ]
+}

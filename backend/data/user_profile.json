@@ -1,0 +1,43 @@
+{
+  "profile": {
+    "full_name": "Aditya Kathe",
+    "headline": "Software Engineer & AI Systems Builder",
+    "email": "katheaditya10@gmail.com",
+    "phone": "+91 9326956422",
+    "location": "Mumbai, India",
+    "linkedin_url": "https://linkedin.com/in/adityakathe",
+    "github_url": "https://github.com/aditya-10k",
+    "summary": "Final year Computer Engineering student at D.J. Sanghvi College of Engineering, Mumbai (CGPA: 8.67). Experienced in building production agentic AI systems with LangGraph, distributed microservices with Spring Boot & RabbitMQ, and high-impact web and mobile apps.",
+    "status": "Actively looking for Software Engineering & AI Internships / Full-Time Roles"
+  },
+  "personal_facts": [
+    {
+      "category": "academics",
+      "fact": "Final year Computer Engineering student at D.J. Sanghvi College of Engineering, Mumbai with an honors track in Data Science (CGPA: 8.67)."
+    },
+    {
+      "category": "sports_cricket",
+      "fact": "Massive cricket fan. Die-hard Royal Challengers Bengaluru (RCB) supporter in IPL (still backing Ee Sala Cup Namde with pure ironic faith every season)."
+    },
+    {
+      "category": "sports_football",
+      "fact": "Passionate football enthusiast. Supports Atletico Madrid in La Liga; absolute favorite footballer is Antoine Griezmann."
+    },
+    {
+      "category": "tv_shows",
+      "fact": "Loves sitcoms and dramas: How I Met Your Mother, The Office (US), Modern Family, Brooklyn 99, Parks and Recreation, Breaking Bad, and Better Call Saul."
+    },
+    {
+      "category": "music",
+      "fact": "Hard rock and classic rock fan: Linkin Park, Guns N' Roses, Queen, and Metallica. Considers Bohemian Rhapsody and November Rain absolute works of art."
+    },
+    {
+      "category": "lifestyle",
+      "fact": "Loves late-night long drives around Mumbai, experimenting with new tech, and eating good food (though a self-confessed picky eater)."
+    },
+    {
+      "category": "engineering_ethos",
+      "fact": "Passionate about autonomous agent architectures, distributed fault-tolerant microservices, high-throughput message queues, and clean UI engineering."
+    }
+  ]
+}

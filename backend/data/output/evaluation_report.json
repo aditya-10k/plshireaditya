@@ -1,0 +1,144 @@
+{
+  "evaluation_timestamp": "2026-09-12T20:05:46Z",
+  "total_holdout_pairs_evaluated": 60,
+  "summaries": [
+    {
+      "strategy_name": "Gold Standard (Human Ground Truth)",
+      "total_evaluated": 60,
+      "linguistic_composite": 0.9923,
+      "punctuation_adherence": 1.0,
+      "casing_fidelity": 1.0,
+      "lexical_overlap": 1.0,
+      "embedding_similarity": 1.0,
+      "behavioral_composite": 0.8697,
+      "behavioral_mae": 0.1581,
+      "judge_overall": 4.8,
+      "judge_voice": 4.6,
+      "judge_style": 4.92,
+      "judge_behavior": 5.0,
+      "judge_situation": 4.47,
+      "judge_epistemic": 5.0,
+      "failure_rate": 0.0833,
+      "top_failures": {
+        "ERR_TOO_VERBOSE": 3,
+        "ERR_WRONG_LANGUAGE_MIX": 1,
+        "ERR_EXCESSIVE_EMOJI": 1
+      }
+    },
+    {
+      "strategy_name": "Retrieved Few-Shot Persona Engine (T029 + T034)",
+      "total_evaluated": 60,
+      "linguistic_composite": 0.5302,
+      "punctuation_adherence": 1.0,
+      "casing_fidelity": 0.91,
+      "lexical_overlap": 0.0065,
+      "embedding_similarity": 0.3176,
+      "behavioral_composite": 0.5857,
+      "behavioral_mae": 0.2868,
+      "judge_overall": 4.86,
+      "judge_voice": 4.83,
+      "judge_style": 4.97,
+      "judge_behavior": 5.0,
+      "judge_situation": 4.48,
+      "judge_epistemic": 5.0,
+      "failure_rate": 0.1667,
+      "top_failures": {
+        "ERR_WRONG_LANGUAGE_MIX": 5,
+        "ERR_TOO_VERBOSE": 5
+      }
+    },
+    {
+      "strategy_name": "Naive Corporate AI Baseline",
+      "total_evaluated": 60,
+      "linguistic_composite": 0.2643,
+      "punctuation_adherence": 0.0,
+      "casing_fidelity": 0.8,
+      "lexical_overlap": 0.0096,
+      "embedding_similarity": 0.1214,
+      "behavioral_composite": 0.6391,
+      "behavioral_mae": 0.3025,
+      "judge_overall": 3.09,
+      "judge_voice": 1.0,
+      "judge_style": 3.5,
+      "judge_behavior": 1.5,
+      "judge_situation": 4.47,
+      "judge_epistemic": 5.0,
+      "failure_rate": 1.0,
+      "top_failures": {
+        "ERR_TRAILING_PERIOD": 60,
+        "ERR_ROBOTIC_AI": 60,
+        "ERR_TOO_VERBOSE": 30
+      }
+    }
+  ],
+  "detailed_results": {
+    "gold_standard": {
+      "strategy_name": "Gold Standard (Human Ground Truth)",
+      "total_evaluated": 60,
+      "linguistic_composite": 0.9923,
+      "punctuation_adherence": 1.0,
+      "casing_fidelity": 1.0,
+      "lexical_overlap": 1.0,
+      "embedding_similarity": 1.0,
+      "behavioral_composite": 0.8697,
+      "behavioral_mae": 0.1581,
+      "judge_overall": 4.8,
+      "judge_voice": 4.6,
+      "judge_style": 4.92,
+      "judge_behavior": 5.0,
+      "judge_situation": 4.47,
+      "judge_epistemic": 5.0,
+      "failure_rate": 0.0833,
+      "top_failures": {
+        "ERR_TOO_VERBOSE": 3,
+        "ERR_WRONG_LANGUAGE_MIX": 1,
+        "ERR_EXCESSIVE_EMOJI": 1
+      }
+    },
+    "retrieved_persona": {
+      "strategy_name": "Retrieved Few-Shot Persona Engine (T029 + T034)",
+      "total_evaluated": 60,
+      "linguistic_composite": 0.5302,
+      "punctuation_adherence": 1.0,
+      "casing_fidelity": 0.91,
+      "lexical_overlap": 0.0065,
+      "embedding_similarity": 0.3176,
+      "behavioral_composite": 0.5857,
+      "behavioral_mae": 0.2868,
+      "judge_overall": 4.86,
+      "judge_voice": 4.83,
+      "judge_style": 4.97,
+      "judge_behavior": 5.0,
+      "judge_situation": 4.48,
+      "judge_epistemic": 5.0,
+      "failure_rate": 0.1667,
+      "top_failures": {
+        "ERR_WRONG_LANGUAGE_MIX": 5,
+        "ERR_TOO_VERBOSE": 5
+      }
+    },
+    "naive_baseline": {
+      "strategy_name": "Naive Corporate AI Baseline",
+      "total_evaluated": 60,
+      "linguistic_composite": 0.2643,
+      "punctuation_adherence": 0.0,
+      "casing_fidelity": 0.8,
+      "lexical_overlap": 0.0096,
+      "embedding_similarity": 0.1214,
+      "behavioral_composite": 0.6391,
+      "behavioral_mae": 0.3025,
+      "judge_overall": 3.09,
+      "judge_voice": 1.0,
+      "judge_style": 3.5,
+      "judge_behavior": 1.5,
+      "judge_situation": 4.47,
+      "judge_epistemic": 5.0,
+      "failure_rate": 1.0,
+      "top_failures": {
+        "ERR_TRAILING_PERIOD": 60,
+        "ERR_ROBOTIC_AI": 60,
+        "ERR_TOO_VERBOSE": 30
+      }
+    }
+  }
+}

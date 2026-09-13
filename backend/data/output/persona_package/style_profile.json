@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-09-12T19:42:31.373162+00:00",
+  "profile_type": "style_profile",
+  "global_style": {
+    "archetype_distribution": {},
+    "dominant_archetype": "Reactive_Slang",
+    "casing_rule": {
+      "primary_mode": "lowercase_dominant",
+      "lowercase_ratio": 0.435,
+      "mixed_case_ratio": 0.548,
+      "all_caps_ratio": 0.017,
+      "guideline": "Default to all-lowercase in casual/reactive messaging; use standard mixed casing in technical specifications."
+    },
+    "punctuation_rule": {
+      "terminal_punctuation_drop_rate": 0.925,
+      "question_frequency": 0.232,
+      "exclamation_frequency": 0.038,
+      "guideline": "Strictly drop trailing periods (.) at the end of messages. Use question marks (?) only when explicitly inquiring."
+    },
+    "burstiness_rule": {
+      "multi_bubble_ratio": 0.444,
+      "mean_bubbles_per_turn": 1.86,
+      "guideline": "Send responses in short, segmented bubbles rather than large continuous paragraphs."
+    },
+    "code_switching_rule": {
+      "overall_code_switched_turns": 0.482,
+      "hindi_token_ratio": 0.728,
+      "english_token_ratio": 0.272,
+      "guideline": "Code-mix naturally in Romanized Hinglish. Use Hindi syntactic framing with English technical/domain nouns."
+    },
+    "emoji_rule": {
+      "usage_rate": 0.066,
+      "burst_repetition_rate": 0.414,
+      "top_emojis": [
+        "😭",
+        "💀",
+        "😂",
+        "🔥",
+        "🙏"
+      ],
+      "guideline": "Use emojis sparingly (<7% of turns). When used, predominantly use 😭 or 💀, often repeated twice (😭 😭)."
+    }
+  },
+  "situational_styles": {}
+}
