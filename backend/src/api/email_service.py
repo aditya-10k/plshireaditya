@@ -8,6 +8,8 @@ from __future__ import annotations
 import logging
 import os
 import smtplib
+import socket
+import ssl
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -23,6 +25,38 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
+
+
+class IPv4SMTP(smtplib.SMTP):
+    """SMTP client that forces IPv4 connections, preventing cloud host IPv6 unreachable errors."""
+    def _get_socket(self, host, port, timeout):
+        for res in socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                s = socket.socket(af, socktype, proto)
+                s.settimeout(timeout)
+                s.connect(sa)
+                return s
+            except OSError:
+                if s:
+                    s.close()
+        raise OSError("No IPv4 route to host")
+
+
+class IPv4SMTP_SSL(smtplib.SMTP_SSL):
+    """SMTP_SSL client that forces IPv4 connections."""
+    def _get_socket(self, host, port, timeout):
+        for res in socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                s = socket.socket(af, socktype, proto)
+                s.settimeout(timeout)
+                s.connect(sa)
+                return self.context.wrap_socket(s, server_hostname=host)
+            except OSError:
+                if s:
+                    s.close()
+        raise OSError("No IPv4 route to host")
 
 
 RESUME_MAPPINGS = [
@@ -175,13 +209,32 @@ katheaditya10@gmail.com | +91 9326956422"""
     else:
         logger.warning("No valid resume file available to attach (user must paste PDF into data/resumes/)")
 
+    sent_successfully = False
+    last_error = None
+
+    # Attempt 1: Port 587 STARTTLS with forced IPv4
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=12) as server:
+        with IPv4SMTP("smtp.gmail.com", 587, timeout=12) as server:
             server.starttls()
             server.login(user, pwd)
             server.send_message(msg)
-        logger.info("Resume email dispatched to %s for role %s", recipient, role_str)
+        sent_successfully = True
+        logger.info("Resume email dispatched to %s for role %s via port 587", recipient, role_str)
+    except Exception as e587:
+        last_error = e587
+        logger.warning("Port 587 failed (%s), attempting SSL port 465 fallback...", e587)
+        # Attempt 2: Port 465 Direct SSL with forced IPv4
+        try:
+            with IPv4SMTP_SSL("smtp.gmail.com", 465, timeout=12) as server:
+                server.login(user, pwd)
+                server.send_message(msg)
+            sent_successfully = True
+            logger.info("Resume email dispatched to %s for role %s via port 465 SSL", recipient, role_str)
+        except Exception as e465:
+            last_error = e465
+            logger.error("Both port 587 and port 465 failed: %s", e465)
+
+    if sent_successfully:
         return {"status": "sent", "recipient": recipient, "role": role_str}
-    except Exception as e:
-        logger.error("Failed to send resume email: %s", e)
-        return {"status": "error", "message": str(e)}
+    else:
+        return {"status": "error", "message": str(last_error)}
