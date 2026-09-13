@@ -96,6 +96,13 @@ async def health_check():
     }
 
 
+@app.get("/api/test-email")
+async def test_email(to: str = Query("adityxishere@gmail.com")):
+    """Diagnostic endpoint to test and verify live SMTP dispatch."""
+    res = send_resume_email_direct(to, role="AI & Agentic Systems")
+    return res
+
+
 @app.get("/api/projects")
 async def get_projects():
     """Returns structured project registry."""

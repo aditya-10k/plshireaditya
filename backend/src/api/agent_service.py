@@ -243,8 +243,8 @@ class PersonaAgentService:
             platform = args.get("platform", "").lower()
             prof = self.db.get_profile() or {}
             urls = {
-                "github": "http://localhost:8000/api/proxy/github",
-                "linkedin": "http://localhost:8000/api/proxy/linkedin",
+                "github": "https://github.com/aditya-10k",
+                "linkedin": "https://linkedin.com/in/adityakathe",
                 "email": f"mailto:{prof.get('email', 'katheaditya10@gmail.com')}",
             }
             target_url = urls.get(platform, urls["github"])
@@ -274,14 +274,14 @@ class PersonaAgentService:
             action = {
                 "type": "DOWNLOAD_RESUME",
                 "action": action_type,
-                "url": f"http://localhost:8000/api/resume/download?filename={fname}",
+                "url": f"/resumes/{fname}",
                 "filename": fname,
                 "title": f"Aditya Kathe — Resume PDF",
                 "autoDownload": is_download,
             }
             return json.dumps({
                 "status": "ready",
-                "download_url": f"http://localhost:8000/api/resume/download?filename={fname}",
+                "download_url": f"/resumes/{fname}",
                 "filename": fname,
                 "email_dispatched_to": recipient or None,
                 "note": "Resume ready for sidebar viewing or download",
@@ -359,7 +359,7 @@ class PersonaAgentService:
                     {"type": "SET_EXPRESSION", "expression": "excited"},
                     {
                         "type": "DOWNLOAD_RESUME",
-                        "url": f"http://localhost:8000/api/resume/download?filename={fname}",
+                        "url": f"/resumes/{fname}",
                         "filename": fname,
                         "title": f"Aditya Kathe — {role_hint} Resume",
                         "autoDownload": False,
@@ -475,7 +475,7 @@ class PersonaAgentService:
                 fname = rf.name if rf else "AdityaKathe.pdf"
                 actions.append({
                     "type": "DOWNLOAD_RESUME",
-                    "url": f"http://localhost:8000/api/resume/download?filename={fname}",
+                    "url": f"/resumes/{fname}",
                     "filename": fname,
                     "title": "Aditya Kathe — Resume PDF",
                     "autoDownload": True,
@@ -485,7 +485,7 @@ class PersonaAgentService:
                 fname = rf.name if rf else "AdityaKathe.pdf"
                 actions.append({
                     "type": "DOWNLOAD_RESUME",
-                    "url": f"http://localhost:8000/api/resume/download?filename={fname}",
+                    "url": f"/resumes/{fname}",
                     "filename": fname,
                     "title": "Aditya Kathe — Resume PDF",
                     "autoDownload": False,
@@ -494,14 +494,14 @@ class PersonaAgentService:
                 actions.append({
                     "type": "OPEN_LINK",
                     "platform": "github",
-                    "url": "http://localhost:8000/api/proxy/github",
+                    "url": "https://github.com/aditya-10k",
                     "title": "Aditya Kathe — GitHub",
                 })
             elif any(w in lower for w in ["linkedin", "connect"]):
                 actions.append({
                     "type": "OPEN_LINK",
                     "platform": "linkedin",
-                    "url": "http://localhost:8000/api/proxy/linkedin",
+                    "url": "https://linkedin.com/in/adityakathe",
                     "title": "Aditya Kathe — LinkedIn",
                 })
             elif any(w in lower for w in ["project", "projects", "work", "apps", "built", "exp", "experience"]):
