@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-doodle: 'Caveat', cursive;
+}
+
+body {
+  font-family: var(--font-sans);
+  /* Deep base — Three.js canvas renders on top of this */
+  background-color: #03080f;
+  color: #e2e8f0;
+}
+
+.font-doodle {
+  font-family: var(--font-doodle);
+}
+
+/* Custom glowing effects */
+.glow-purple-radial {
+  background: radial-gradient(circle at 50% 50%, rgba(147, 51, 234, 0.22) 0%, rgba(59, 130, 246, 0.15) 35%, transparent 70%);
+}
+
+.glow-ambient-floor {
+  background: radial-gradient(ellipse 60% 25% at 50% 75%, rgba(139, 92, 246, 0.35) 0%, rgba(56, 189, 248, 0.25) 30%, transparent 75%);
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(15, 20, 32, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-subtle {
+  background: rgba(18, 24, 38, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-input {
+  background: rgba(13, 17, 27, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Floating animation */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(0.5deg);
+  }
+}
+
+.animate-float-gentle {
+  animation: floatGentle 5s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 25px rgba(139, 92, 246, 0.4)) drop-shadow(0 0 50px rgba(56, 189, 248, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(168, 85, 247, 0.65)) drop-shadow(0 0 70px rgba(56, 189, 248, 0.4));
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 14, 23, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
