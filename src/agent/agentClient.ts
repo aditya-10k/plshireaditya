@@ -1,6 +1,5 @@
 import { AgentResponse } from '../types/agent';
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 /**
  * Dedicated Agent Client (Protocol 1.0)
@@ -23,7 +22,7 @@ export async function queryAgent(
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for deep LLM + RAG
+  const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout to allow Render free tier cold-start waking
 
   try {
     const payload: { prompt: string; history?: Array<{ role: string; content: string }> } = {
@@ -54,7 +53,7 @@ export async function queryAgent(
   } catch (err: any) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
-      throw new Error('Inference timed out after 15 seconds. Please try again.');
+      throw new Error('Inference timed out after 35 seconds. The backend may still be warming up from cold start.');
     }
     throw new Error(`Failed to connect to backend at ${API_BASE}. Make sure the FastAPI server is running: ${err.message || err}`);
   }

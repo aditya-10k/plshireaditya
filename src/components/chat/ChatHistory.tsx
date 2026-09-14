@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Sparkles, GripHorizontal, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { Message } from '../../types';
 import { tts } from '../../agent/ttsAdapter';
+import { useBackendHealth } from '../../hooks/useBackendHealth';
 
 interface ChatHistoryProps {
   messages: Message[];
@@ -11,6 +12,7 @@ interface ChatHistoryProps {
 export const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, isThinking }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isSoundOn, setIsSoundOn] = useState<boolean>(tts.isEnabled);
+  const health = useBackendHealth();
 
   // Draggable position state (defaults to left side)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -116,7 +118,18 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, isThinking }
       >
         <div className="flex items-center gap-1.5">
           <GripHorizontal className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors" />
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+          <span
+            className={`w-1.5 h-1.5 rounded-full transition-colors ${
+              health.status === 'online'
+                ? 'bg-emerald-400 animate-pulse'
+                : health.status === 'waking'
+                ? 'bg-amber-400 animate-ping'
+                : health.status === 'offline'
+                ? 'bg-rose-500'
+                : 'bg-cyan-500 animate-pulse'
+            }`}
+            title={`Backend: ${health.status}${health.latencyMs !== null ? ` (${health.latencyMs}ms)` : ''}`}
+          />
           <span className="text-[11px] font-medium tracking-tight text-slate-700 dark:text-slate-300">
             Aditya
           </span>
@@ -147,8 +160,23 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, isThinking }
               <RotateCcw className="w-3 h-3" />
             </button>
           )}
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-            live
+          <span
+            className={`text-[10px] font-mono cursor-pointer transition-colors ${
+              health.status === 'online'
+                ? 'text-emerald-500/90 dark:text-emerald-400/90 hover:text-emerald-400'
+                : health.status === 'waking'
+                ? 'text-amber-400 hover:text-amber-300 animate-pulse'
+                : health.status === 'offline'
+                ? 'text-rose-400 hover:text-rose-300'
+                : 'text-slate-400 dark:text-slate-500'
+            }`}
+            title={`Backend is ${health.status}. Click to ping.`}
+            onClick={(e) => {
+              e.stopPropagation();
+              health.refresh();
+            }}
+          >
+            {health.status === 'online' && health.latencyMs !== null ? `${health.latencyMs}ms` : health.status}
           </span>
         </div>
       </div>

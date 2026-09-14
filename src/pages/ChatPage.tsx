@@ -3,6 +3,7 @@ import { UnderwaterScene, FluidTone, FluidState } from '../components/fluid/Unde
 import { ChatHistory } from '../components/chat/ChatHistory';
 import { InputBar } from '../components/chat/InputBar';
 import { QuickPrompts } from '../components/chat/QuickPrompts';
+import { BackendWakingBanner } from '../components/common/BackendWakingBanner';
 import { DraggableEmbedWindow } from '../components/ProjectWindow/DraggableEmbedWindow';
 import { getProjectManifest } from '../projects/registry';
 import { queryAgent } from '../agent/mockAgent';
@@ -334,6 +335,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
 
         {/* Center Dock: Chatbox in the MIDDLE (No manual test button) */}
         <div className="w-full max-w-xl mx-auto flex flex-col items-center space-y-2 pt-2">
+          <BackendWakingBanner />
           <InputBar
             onSendMessage={handleSendMessage}
             isListening={fluidState === 'listening'}

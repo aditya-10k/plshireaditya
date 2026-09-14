@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sun, Moon, Coffee } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { NavTab } from '../../types';
+import { BackendStatusBadge } from '../common/BackendStatusBadge';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -43,18 +44,15 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-50 w-full px-6 py-4 backdrop-blur-md bg-[#080a0f]/80 border-b border-white/5 transition-colors duration-300">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         
-        {/* Brand Logo */}
+        {/* Brand Logo & Live Status */}
         <div 
           onClick={() => setActiveTab('chat')}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <span className="font-semibold text-lg tracking-tight text-white group-hover:text-purple-300 transition-colors">
-            aditya-10k<span className="text-purple-400">.exe</span>
+          <span className="font-semibold text-lg font-mono tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+            pls hire aditya
           </span>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-xs font-medium text-emerald-400">online</span>
-          </div>
+          <BackendStatusBadge compact={true} />
         </div>
 
         {/* Center Navigation Tabs */}

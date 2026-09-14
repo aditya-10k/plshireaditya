@@ -6,7 +6,7 @@
  * 2. Fallback: Resilient Web Speech API with Chromium GC and pause protections
  */
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 declare global {
   interface Window {

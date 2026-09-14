@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatPage } from './pages/ChatPage';
+import { BackendStatusBadge } from './components/common/BackendStatusBadge';
 
 export const App: React.FC = () => {
   const isDark = true;
@@ -80,8 +81,9 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Top-Right Header: pls hire aditya branding */}
-      <header className="fixed top-5 right-6 z-50 flex items-center gap-2.5">
+      {/* Top-Right Header: pls hire aditya branding + live backend health badge */}
+      <header className="fixed top-5 right-6 z-50 flex items-center gap-2 sm:gap-2.5">
+        <BackendStatusBadge />
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full backdrop-blur-md border bg-slate-900/70 border-white/10 shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
           <span className="text-xs font-mono font-medium tracking-tight text-slate-300 select-none">
