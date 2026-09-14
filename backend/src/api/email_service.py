@@ -234,12 +234,18 @@ katheaditya10@gmail.com | +91 9326956422"""
                     "filename": pdf_filename,
                     "pdf_base64": pdf_base64,
                 },
-                timeout=20,
+                timeout=25,
+                allow_redirects=True,
             )
-            logger.info("Dispatched resume email via Google Apps Script HTTPS webhook: %s", resp.status_code)
-            return {"status": "sent", "recipient": recipient, "role": role_str, "provider": "gmail_webhook"}
+            logger.info("Google Apps Script HTTP webhook response status: %s", resp.status_code)
+            if resp.status_code in (200, 201):
+                return {"status": "sent", "recipient": recipient, "role": role_str, "provider": "gmail_webhook"}
+            else:
+                logger.warning("Google Apps Script returned %s: %s", resp.status_code, resp.text[:300])
+                last_error = f"Google Apps Script returned {resp.status_code}: {resp.text[:200]}"
         except Exception as ew:
             logger.error("Failed to send via GMAIL_WEBHOOK_URL: %s", ew)
+            last_error = str(ew)
 
     # 2. Brevo HTTPS REST API (Port 443)
     if brevo_key:
