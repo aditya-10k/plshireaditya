@@ -85,9 +85,12 @@ async def startup_event():
 
 
 
+@app.get("/")
+@app.get("/health")
+@app.get("/healthz")
 @app.get("/api/health")
 async def health_check():
-    """Health-check endpoint for cron-job keep-alives and load balancers."""
+    """Health-check endpoint for cron-job keep-alives, Render monitors, and load balancers."""
     return {
         "status": "healthy",
         "service": "persona-agent-api",
