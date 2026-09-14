@@ -431,7 +431,7 @@ class PersonaAgentService:
             # Round 2: Generate final conversational response from tool findings
             messages.append({
                 "role": "user",
-                "content": "Answer conversationally in character using the factual data retrieved above. Do not output any more tool calls, reply in clean plain text only.",
+                "content": "Answer conversationally in character using the factual data retrieved above. STRICT TIME LIMIT: Keep your explanation strictly between 60 and 80 words (2-3 punchy sentences max) so that spoken audio narration takes around 30 seconds. Do not output any more tool calls, reply in clean plain text only.",
             })
             final_msg = self._call_llm_round(messages, use_tools=False)
             final_text = final_msg.get("content", "")

@@ -154,7 +154,7 @@ class TTSService:
                             "target_language_code": "en-IN",
                             "speaker": "aditya",
                             "pitch": 0,
-                            "pace": 1.05,
+                            "pace": 1.18,
                             "loudness": 1.5,
                             "speech_sample_rate": 22050,
                             "enable_preprocessing": True,
@@ -226,7 +226,7 @@ class TTSService:
 
         # 3. Tertiary: Microsoft Edge-TTS (en-IN-PrabhatNeural)
         try:
-            communicate = edge_tts.Communicate(clean_text, DEFAULT_VOICE)
+            communicate = edge_tts.Communicate(clean_text, DEFAULT_VOICE, rate="+16%")
             chunks = []
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":

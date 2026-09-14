@@ -131,6 +131,7 @@ class TTSAdapter {
         const blobUrl = URL.createObjectURL(blob);
         this.currentBlobUrl = blobUrl;
         const audio = new Audio(blobUrl);
+        audio.playbackRate = 1.08;
         this.currentAudio = audio;
 
         let started = false;
@@ -223,7 +224,7 @@ class TTSAdapter {
             utterance.lang = navigator.language || 'en-US';
           }
 
-          utterance.rate = 1.05;
+          utterance.rate = 1.15;
           utterance.pitch = 1.0;
 
           this.startHeartbeat();
