@@ -135,33 +135,53 @@ class TTSAdapter {
         this.currentAudio = audio;
 
         let started = false;
+        let animFrameId: number | null = null;
+
+        const cancelFrame = () => {
+          if (animFrameId !== null) {
+            cancelAnimationFrame(animFrameId);
+            animFrameId = null;
+          }
+        };
+
+        const tick = () => {
+          if (this.currentSessionId !== sessionId || !this.currentAudio) {
+            cancelFrame();
+            return;
+          }
+          if (audio.duration && audio.duration > 0 && !audio.paused) {
+            const progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
+            const charIndex = Math.min(cleanText.length, Math.floor(progress * cleanText.length));
+            onBoundary?.(charIndex);
+          }
+          if (!audio.paused && !audio.ended) {
+            animFrameId = requestAnimationFrame(tick);
+          }
+        };
+
         audio.onplay = () => {
           if (this.currentSessionId !== sessionId) return;
           started = true;
           onStart?.();
-        };
-
-        audio.ontimeupdate = () => {
-          if (this.currentSessionId !== sessionId) return;
-          if (audio.duration && audio.duration > 0) {
-            const progress = audio.currentTime / audio.duration;
-            const charIndex = Math.min(cleanText.length, Math.floor(progress * cleanText.length));
-            onBoundary?.(charIndex);
-          }
+          cancelFrame();
+          animFrameId = requestAnimationFrame(tick);
         };
 
         audio.onended = () => {
+          cancelFrame();
           if (this.currentBlobUrl === blobUrl) {
             URL.revokeObjectURL(blobUrl);
             this.currentBlobUrl = null;
           }
           if (this.currentSessionId === sessionId) {
             this.currentAudio = null;
+            onBoundary?.(cleanText.length);
             onEnd?.();
           }
         };
 
         audio.onerror = () => {
+          cancelFrame();
           if (this.currentBlobUrl === blobUrl) {
             URL.revokeObjectURL(blobUrl);
             this.currentBlobUrl = null;

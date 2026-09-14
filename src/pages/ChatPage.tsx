@@ -159,7 +159,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
 
       // Synchronized speech and progressive text reveal
       if (tts.isEnabled || response.speech?.enabled) {
-        let displayedChars = 0;
         let hasStarted = false;
         let fallbackTimer: any = null;
         let fallbackInterval: any = null;
@@ -172,20 +171,37 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
         };
         setMessages((prev) => [...prev, aiMsg]);
 
+        let displayedChars = 0;
+        let targetChars = 0;
+        let smoothInterval: any = null;
+
+        const startSmoothTicker = () => {
+          if (smoothInterval) clearInterval(smoothInterval);
+          smoothInterval = setInterval(() => {
+            if (displayedChars < targetChars) {
+              const diff = targetChars - displayedChars;
+              // Smoothly step 1 to 2 characters per 20ms tick without choppy chunk jumps
+              const step = Math.max(1, Math.min(diff, Math.ceil(diff / 2.5)));
+              displayedChars = Math.min(fullText.length, displayedChars + step);
+              setMessages((prev) =>
+                prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, displayedChars) } : m))
+              );
+            }
+          }, 20);
+        };
+
         const runFallbackStream = () => {
           if (fallbackInterval) clearInterval(fallbackInterval);
-          let chars = displayedChars;
           fallbackInterval = setInterval(() => {
-            chars += 8;
-            if (chars >= fullText.length) {
-              chars = fullText.length;
+            displayedChars = Math.min(fullText.length, displayedChars + 2);
+            if (displayedChars >= fullText.length) {
               clearInterval(fallbackInterval);
               fallbackInterval = null;
             }
             setMessages((prev) =>
-              prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, chars) } : m))
+              prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, displayedChars) } : m))
             );
-          }, 30);
+          }, 25);
         };
 
         // Safety fallback: if audio takes longer than 4.5s to start, stream text anyway
@@ -207,15 +223,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
             setFluidTone(resolvedTone === 'neutral' ? 'speaking' : resolvedTone);
 
             const firstSpace = fullText.indexOf(' ');
-            displayedChars = firstSpace > 0 ? firstSpace : Math.min(fullText.length, 10);
-            setMessages((prev) =>
-              prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, displayedChars) } : m))
-            );
+            targetChars = firstSpace > 0 ? firstSpace : Math.min(fullText.length, 6);
+            startSmoothTicker();
           },
           () => {
             // onEnd: Audio playback complete
             if (fallbackTimer) clearTimeout(fallbackTimer);
             if (fallbackInterval) clearInterval(fallbackInterval);
+            if (smoothInterval) clearInterval(smoothInterval);
+            displayedChars = fullText.length;
             setMessages((prev) =>
               prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText } : m))
             );
@@ -225,6 +241,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
           () => {
             // onError: Audio playback failed
             if (fallbackTimer) clearTimeout(fallbackTimer);
+            if (smoothInterval) clearInterval(smoothInterval);
             if (!hasStarted) {
               hasStarted = true;
               runFallbackStream();
@@ -237,14 +254,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
           },
           (charIndex) => {
             // onBoundary: Real-time playback progression from audio
-            if (charIndex > displayedChars) {
-              const nextSpace = fullText.indexOf(' ', charIndex);
-              const target = nextSpace !== -1 ? Math.min(nextSpace, charIndex + 14) : charIndex;
-              displayedChars = Math.min(fullText.length, Math.max(displayedChars, target));
-              setMessages((prev) =>
-                prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, displayedChars) } : m))
-              );
-            }
+            targetChars = Math.max(targetChars, Math.min(fullText.length, charIndex));
 
             // Presentation mode: dynamically switch active project as speech transitions to next paragraph
             if (response.actions) {
