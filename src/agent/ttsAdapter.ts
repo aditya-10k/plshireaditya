@@ -83,7 +83,7 @@ class TTSAdapter {
     onStart?: () => void,
     onEnd?: () => void,
     onError?: () => void,
-    onBoundary?: (charIndex: number) => void
+    onBoundary?: (charIndex: number, progress?: number) => void
   ) {
     this.stop();
 
@@ -152,7 +152,7 @@ class TTSAdapter {
           if (audio.duration && audio.duration > 0 && !audio.paused) {
             const progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
             const charIndex = Math.min(cleanText.length, Math.floor(progress * cleanText.length));
-            onBoundary?.(charIndex);
+            onBoundary?.(charIndex, progress);
           }
           if (!audio.paused && !audio.ended) {
             animFrameId = requestAnimationFrame(tick);
@@ -175,7 +175,7 @@ class TTSAdapter {
           }
           if (this.currentSessionId === sessionId) {
             this.currentAudio = null;
-            onBoundary?.(cleanText.length);
+            onBoundary?.(cleanText.length, 1.0);
             onEnd?.();
           }
         };
@@ -213,7 +213,7 @@ class TTSAdapter {
     onStart?: () => void,
     onEnd?: () => void,
     onError?: () => void,
-    onBoundary?: (charIndex: number) => void
+    onBoundary?: (charIndex: number, progress?: number) => void
   ) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       onEnd?.();
@@ -255,7 +255,9 @@ class TTSAdapter {
 
           utterance.onboundary = (e) => {
             if (e.name === 'word' || typeof e.charIndex === 'number') {
-              onBoundary?.(e.charIndex);
+              const charIdx = e.charIndex || 0;
+              const prog = cleanText.length > 0 ? charIdx / cleanText.length : 0;
+              onBoundary?.(charIdx, prog);
             }
           };
 

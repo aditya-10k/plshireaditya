@@ -159,22 +159,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
       }
 
       // Synchronized speech and progressive text reveal
-      if (tts.isEnabled || response.speech?.enabled) {
+      const isSoundActive = tts.isEnabled && response.speech?.enabled !== false;
+
+      if (isSoundActive) {
         let hasStarted = false;
         let fallbackTimer: any = null;
+        let smoothInterval: any = null;
         let fallbackInterval: any = null;
-
-        const aiMsg: Message = {
-          id: aiMsgId,
-          sender: 'ai',
-          text: '...',
-          timestamp: 'Just now',
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-
         let displayedChars = 0;
         let targetChars = 0;
-        let smoothInterval: any = null;
 
         const startSmoothTicker = () => {
           if (smoothInterval) clearInterval(smoothInterval);
@@ -191,38 +184,72 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
           }, 20);
         };
 
-        const runFallbackStream = () => {
+        const runFallbackTextStream = () => {
+          if (fallbackTimer) clearTimeout(fallbackTimer);
+          if (smoothInterval) clearInterval(smoothInterval);
           if (fallbackInterval) clearInterval(fallbackInterval);
+
+          setFluidState('speaking');
+          setFluidTone(resolvedTone === 'neutral' ? 'speaking' : resolvedTone);
+
+          // Ensure the message container is created if not already
+          setMessages((prev) => {
+            if (!prev.some((m) => m.id === aiMsgId)) {
+              return [...prev, { id: aiMsgId, sender: 'ai', text: '', timestamp: 'Just now' }];
+            }
+            return prev;
+          });
+
+          displayedChars = 0;
           fallbackInterval = setInterval(() => {
             displayedChars = Math.min(fullText.length, displayedChars + 2);
-            if (displayedChars >= fullText.length) {
-              clearInterval(fallbackInterval);
-              fallbackInterval = null;
-            }
             setMessages((prev) =>
               prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, displayedChars) } : m))
             );
-          }, 25);
+            if (displayedChars >= fullText.length) {
+              clearInterval(fallbackInterval);
+              fallbackInterval = null;
+              setFluidState('idle');
+              resetIdle();
+            }
+          }, 20);
         };
 
-        // Safety fallback: if audio takes longer than 4.5s to start, stream text anyway
+        // Safety timeout: only if audio fails to start after 10 seconds of buffering
         fallbackTimer = setTimeout(() => {
           if (!hasStarted) {
             hasStarted = true;
-            runFallbackStream();
+            tts.stop(); // Abort pending audio so it never plays late and clashes
+            runFallbackTextStream();
           }
-        }, 4500);
+        }, 10000);
 
         tts.speak(
           fullText,
           () => {
             // onStart: Audio is actively playing through speakers
+            if (fallbackTimer) {
+              clearTimeout(fallbackTimer);
+              fallbackTimer = null;
+            }
+            if (fallbackInterval) {
+              clearInterval(fallbackInterval);
+              fallbackInterval = null;
+            }
             hasStarted = true;
-            if (fallbackTimer) clearTimeout(fallbackTimer);
-            if (fallbackInterval) clearInterval(fallbackInterval);
             setFluidState('speaking');
             setFluidTone(resolvedTone === 'neutral' ? 'speaking' : resolvedTone);
 
+            // Add the AI message bubble now that speech has begun
+            setMessages((prev) => {
+              if (!prev.some((m) => m.id === aiMsgId)) {
+                return [...prev, { id: aiMsgId, sender: 'ai', text: '', timestamp: 'Just now' }];
+              }
+              return prev.map((m) => (m.id === aiMsgId ? { ...m, text: '' } : m));
+            });
+
+            // Start strictly from 0 so words stream in perfect synchrony with voice
+            displayedChars = 0;
             const firstSpace = fullText.indexOf(' ');
             targetChars = firstSpace > 0 ? firstSpace : Math.min(fullText.length, 6);
             startSmoothTicker();
@@ -245,22 +272,26 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
             if (smoothInterval) clearInterval(smoothInterval);
             if (!hasStarted) {
               hasStarted = true;
-              runFallbackStream();
+              runFallbackTextStream();
             } else {
               setMessages((prev) =>
                 prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText } : m))
               );
+              setFluidState('idle');
             }
-            setFluidState('idle');
           },
-          (charIndex) => {
+          (charIndex, progress) => {
             // onBoundary: Real-time playback progression from audio
-            targetChars = Math.max(targetChars, Math.min(fullText.length, charIndex));
+            const calculatedTarget = typeof progress === 'number'
+              ? Math.floor(progress * fullText.length)
+              : charIndex;
+
+            targetChars = Math.max(targetChars, Math.min(fullText.length, calculatedTarget));
 
             // Presentation mode: dynamically switch active project as speech transitions to next paragraph
             if (response.actions) {
               for (let pIdx = 0; pIdx < paraBoundaries.length; pIdx++) {
-                if (charIndex >= paraBoundaries[pIdx].start && !triggeredParas.has(pIdx)) {
+                if (calculatedTarget >= paraBoundaries[pIdx].start && !triggeredParas.has(pIdx)) {
                   triggeredParas.add(pIdx);
                   const matchingAction = (response.actions as any[]).find((a) => a.targetParagraph === pIdx);
                   if (matchingAction) {
@@ -272,7 +303,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
           }
         );
       } else {
+        // Sound is muted or disabled: stream text smoothly from 0 with no delay
         setFluidState('idle');
+        resetIdle();
         let displayedChars = 0;
         const aiMsg: Message = {
           id: aiMsgId,
@@ -283,15 +316,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isDark }) => {
         setMessages((prev) => [...prev, aiMsg]);
 
         const streamInterval = setInterval(() => {
-          displayedChars += 10;
-          if (displayedChars >= fullText.length) {
-            displayedChars = fullText.length;
-            clearInterval(streamInterval);
-          }
+          displayedChars = Math.min(fullText.length, displayedChars + 2);
           setMessages((prev) =>
             prev.map((m) => (m.id === aiMsgId ? { ...m, text: fullText.slice(0, displayedChars) } : m))
           );
-        }, 30);
+          if (displayedChars >= fullText.length) {
+            clearInterval(streamInterval);
+          }
+        }, 20);
       }
     } catch (err: any) {
       setFluidState('idle');
