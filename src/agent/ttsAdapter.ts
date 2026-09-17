@@ -53,27 +53,42 @@ class TTSAdapter {
     const voices = this.getVoices();
     if (!voices || voices.length === 0) return null;
 
+    // 1. Prefer Indian female voice (Neerja, Heera, Veena, Priya, etc.)
+    const indianFemaleVoice = voices.find((v) => {
+      const name = v.name.toLowerCase();
+      const lang = v.lang.toLowerCase();
+      const isIndian = lang === 'en-in' || lang === 'en_in' || name.includes('india') || name.includes('hindi');
+      return (
+        isIndian &&
+        (name.includes('neerja') ||
+          name.includes('heera') ||
+          name.includes('veena') ||
+          name.includes('priya') ||
+          name.includes('aditi') ||
+          name.includes('female') ||
+          name.includes('woman'))
+      );
+    });
+    if (indianFemaleVoice) return indianFemaleVoice;
+
+    // 2. Any Indian English voice
     const indianVoice = voices.find((v) => {
       const name = v.name.toLowerCase();
       const lang = v.lang.toLowerCase();
-      return (
-        lang === 'en-in' ||
-        lang === 'en_in' ||
-        name.includes('india') ||
-        name.includes('prabhat') ||
-        name.includes('neerja') ||
-        name.includes('ravi') ||
-        name.includes('heera')
-      );
+      return lang === 'en-in' || lang === 'en_in' || name.includes('india');
     });
     if (indianVoice) return indianVoice;
 
-    const naturalVoice = voices.find((v) => {
+    // 3. Any natural female voice
+    const naturalFemale = voices.find((v) => {
       const name = v.name.toLowerCase();
       const lang = v.lang.toLowerCase();
-      return lang.startsWith('en') && (name.includes('natural') || name.includes('online') || name.includes('google'));
+      return (
+        lang.startsWith('en') &&
+        (name.includes('female') || name.includes('woman') || name.includes('natural') || name.includes('online'))
+      );
     });
-    if (naturalVoice) return naturalVoice;
+    if (naturalFemale) return naturalFemale;
 
     return voices.find((v) => v.lang.toLowerCase().startsWith('en')) || voices[0] || null;
   }
