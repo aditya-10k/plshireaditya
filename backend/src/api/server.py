@@ -46,13 +46,35 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS Middleware allowing all frontend origins (Cloudflare Pages, localhost, preview builds)
+# Comprehensive CORS configuration:
+# 1. allow_origin_regex matches any HTTP or HTTPS origin (Cloudflare Pages, Vercel, localhost, Render)
+# 2. allow_credentials=True supports credentialed requests, Authorization headers, and cookies
+# 3. Explicit list of production and local development origins
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "https://plshireaditya.pages.dev",
+    "https://plshireaditya.onrender.com",
+    "https://plshireaditya.vercel.app",
+    "https://adityakathe.me",
+    "https://www.adityakathe.me",
+    "https://matchresumenow.vercel.app",
+    "https://doyoularp.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https?://.*",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
 )
 
 # Shared services
