@@ -74,6 +74,28 @@ export const stockAssistantManifest: ProjectManifest = {
   highlights: ['Specialized agent coordination for filings and news', 'Verification guardrails with source attribution', 'PostgreSQL pgvector document store'],
 };
 
+export const svkmEduConnectManifest: ProjectManifest = {
+  id: 'svkm_educonnect',
+  name: 'SVKM EduConnect',
+  subtitle: 'School Communication & Admin Platform',
+  description:
+    'Cross-platform school communication and administrative portal built for SVKM institutions, supporting 1,000+ mobile downloads, 40+ teacher profiles, real-time messaging, attendance, and leave workflows.',
+  links: {
+    live: 'https://educonnect.svkm.ac.in/',
+  },
+  technologies: ['Flutter', 'Dart', 'WebSockets', 'FCM Push Notifications', 'REST APIs', 'Scalable System Design'],
+  metrics: [
+    { label: 'Downloads', value: '1,000+' },
+    { label: 'Faculty', value: '40+ Profiles' },
+    { label: 'Platforms', value: 'iOS & Android' },
+  ],
+  highlights: [
+    '1,000+ downloads across Google Play Store and Apple App Store',
+    '40+ teacher profiles supporting real-time messaging, attendance, and leave workflows',
+    'Unified announcements and appointment scheduling replacing manual paper circulars',
+  ],
+};
+
 export const PROJECT_REGISTRY: Record<string, ProjectManifest> = {
   matchresume: matchResumeManifest,
   'larp-detector': larpDetectorManifest,
@@ -82,6 +104,9 @@ export const PROJECT_REGISTRY: Record<string, ProjectManifest> = {
   jackdsql: jackdsqlManifest,
   cricmanage: cricManageManifest,
   stockresearchassistant: stockAssistantManifest,
+  svkm_educonnect: svkmEduConnectManifest,
+  educonnect: svkmEduConnectManifest,
+  svkm: svkmEduConnectManifest,
 };
 
 export const getProjectManifest = (id: string): ProjectManifest | undefined => {

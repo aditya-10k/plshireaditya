@@ -108,6 +108,7 @@ PORTFOLIO_TOOLS = [
                             "jackdsql",
                             "cricmanage",
                             "stockresearchassistant",
+                            "svkm_educonnect",
                         ],
                         "description": "ID of the project to open in the live sidebar window",
                     }
@@ -197,7 +198,7 @@ class PersonaAgentService:
             chunks = self.db.search_rag(query, limit=3)
             lower_q = query.lower()
             res: Dict[str, Any] = {"rag_chunks": chunks}
-            if any(w in lower_q for w in ["experience", "work", "intern", "triponovaa", "educonnect", "quickyearning", "kaam"]):
+            if any(w in lower_q for w in ["experience", "work", "intern", "triponovaa", "educonnect", "svkm", "quickyearning", "kaam"]):
                 res["verified_experience"] = self.db.get_experiences()
             if any(w in lower_q for w in ["education", "college", "cgpa", "gpa", "djsce", "padhai"]):
                 res["education"] = self.db.get_education()
@@ -223,6 +224,14 @@ class PersonaAgentService:
 
         elif name == "open_project_demo":
             pid = args.get("project_id", "").lower()
+            if pid in ["educonnect", "svkm", "svkm_educonnect"]:
+                action = {
+                    "type": "OPEN_PROJECT",
+                    "projectId": "svkm_educonnect",
+                    "url": "https://educonnect.svkm.ac.in/",
+                    "title": "SVKM EduConnect — Live Portal",
+                }
+                return json.dumps({"status": "opened", "project": "SVKM EduConnect", "url": "https://educonnect.svkm.ac.in/"}), action
             p = self.db.get_project(pid)
             if not p:
                 for proj in self.db.list_projects():
@@ -305,6 +314,24 @@ class PersonaAgentService:
                 "emotion": "skeptical",
                 "speech": {"enabled": True},
                 "actions": [{"type": "SET_EXPRESSION", "expression": "skeptical"}],
+            }
+
+        # Strict Anti-Bullshit Guardrail: Decline LeetCode, DSA, and generic code solving
+        if re.search(r"\b(2sum|twosum|two-sum|leetcode|hackerrank|codeforces|binary search|bubble sort|merge sort|quick sort|dsa|linked list|reverse a string|fibonacci|knapsack|dynamic programming)\b", lower) or (re.search(r"\b(code do|code likho|solution do|solve karo|solve this)\b", lower) and not any(p in lower for p in ["repo", "github", "matchresume", "batchshare", "jackdsql", "larp", "cricmanage", "stock", "educonnect"])):
+            is_hindi = bool(re.search(r"\b(bhai|karo|batao|ka|ki|ke|do|de|yaar|mujhe|mera|meri|apna)\b", lower))
+            refusal_text = (
+                "Bhai main apna portfolio aur distributed systems showcase karne ke liye hoon, generic LeetCode solver nahi. JackDSQL, MatchResume, ya mere backend architecture ke baare me pooch, ya unka live demo dekh le"
+                if is_hindi
+                else "I'm here to walk you through my projects and distributed systems, not solve generic LeetCode problems. Check out JackDSQL, MatchResume, or ask about my backend architecture"
+            )
+            return {
+                "protocolVersion": "1.0",
+                "text": refusal_text,
+                "emotion": "skeptical",
+                "speech": {"enabled": True},
+                "actions": [
+                    {"type": "SET_EXPRESSION", "expression": "skeptical"}
+                ],
             }
 
         # 1. Grounded Self-Awareness: "What is this website?", "What is this?", "What am I looking at?"
@@ -431,7 +458,7 @@ class PersonaAgentService:
             # Round 2: Generate final conversational response from tool findings
             messages.append({
                 "role": "user",
-                "content": "Answer conversationally in character using the factual data retrieved above. STRICT TIME LIMIT: Keep your explanation strictly between 60 and 80 words (2-3 punchy sentences max) so that spoken audio narration takes around 30 seconds. Do not output any more tool calls, reply in clean plain text only.",
+                "content": "Answer conversationally in character using the factual data retrieved above. ANTI-BULLSHIT GUARDRAIL: Be direct, grounded, and concise. Zero fluff, zero unsolicited advice, zero marketing hyperbole. Keep your explanation strictly between 45 and 70 words (2-3 crisp sentences max). Do not output any more tool calls, reply in clean plain text only.",
             })
             final_msg = self._call_llm_round(messages, use_tools=False)
             final_text = final_msg.get("content", "")
@@ -447,6 +474,7 @@ class PersonaAgentService:
             "jackdsql": ["jackdsql", "sql sandbox", "assessment engine"],
             "larp-detector": ["larp detector", "doyoularp"],
             "stockresearchassistant": ["stock research", "yfinance"],
+            "svkm_educonnect": ["educonnect", "svkm"],
         }
         presentation_actions = []
         for idx, para in enumerate(paras):
@@ -503,6 +531,13 @@ class PersonaAgentService:
                     "platform": "linkedin",
                     "url": "https://linkedin.com/in/adityakathe",
                     "title": "Aditya Kathe — LinkedIn",
+                })
+            elif any(w in lower for w in ["educonnect", "svkm"]):
+                actions.append({
+                    "type": "OPEN_PROJECT",
+                    "projectId": "svkm_educonnect",
+                    "url": "https://educonnect.svkm.ac.in/",
+                    "title": "SVKM EduConnect — Live Portal",
                 })
             elif any(w in lower for w in ["project", "projects", "work", "apps", "built", "exp", "experience"]):
                 actions.append({
@@ -617,11 +652,12 @@ class PersonaAgentService:
         raise RuntimeError("Live LLM inference failed across all providers.")
 
     def _sanitize_persona_output(self, text: str) -> str:
-        """Enforce strict persona constraints: strip asterisks, trailing period, robotic phrases, tool tags, thinking tags."""
+        """Enforce strict persona constraints: strip code blocks, asterisks, trailing period, robotic phrases, tool tags, thinking tags."""
         cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
         cleaned = re.sub(r'</?think>', '', cleaned)
         cleaned = re.sub(r'<tool_call>.*?</tool_call>', '', cleaned, flags=re.DOTALL)
         cleaned = re.sub(r'<function=.*?</function>', '', cleaned, flags=re.DOTALL)
+        cleaned = re.sub(r'```[\s\S]*?```', '', cleaned)
         cleaned = re.sub(r'\b(open_project_demo|search_portfolio_database|open_social_profile|download_resume)\s*\([^)]*\)', '', cleaned)
         cleaned = cleaned.strip()
         cleaned = cleaned.replace("*", "")

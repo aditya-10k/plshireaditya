@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Minus, Maximize2, Minimize2, ExternalLink, RotateCw, Download, Mail, FileText } from 'lucide-react';
+import { X, Minus, Maximize2, Minimize2, ExternalLink, RotateCw, Download, Mail, FileText, Smartphone, Monitor } from 'lucide-react';
+import { API_BASE } from '../../config/api';
 
 interface DraggableEmbedWindowProps {
   url?: string;
@@ -14,8 +15,16 @@ export const DraggableEmbedWindow: React.FC<DraggableEmbedWindowProps> = ({
   isOpen,
   onClose,
 }) => {
-  // Compact, smaller window size
+  const isJackDSQL = url.toLowerCase().includes('jackdsql') || title.toLowerCase().includes('jackdsql');
+  const [isMobileMode, setIsMobileMode] = useState<boolean>(() => isJackDSQL);
+
+  // Compact or mobile orientation size
   const [size, setSize] = useState<{ width: number; height: number }>(() => {
+    if (isJackDSQL) {
+      const mobileW = Math.min(390, Math.max(340, window.innerWidth - 32));
+      const mobileH = Math.min(740, Math.max(520, Math.floor(window.innerHeight * 0.88)));
+      return { width: mobileW, height: mobileH };
+    }
     const compactW = Math.min(580, Math.max(380, Math.floor(window.innerWidth * 0.44)));
     const compactH = Math.min(460, Math.max(340, Math.floor(window.innerHeight * 0.58)));
     return { width: compactW, height: compactH };
@@ -23,10 +32,14 @@ export const DraggableEmbedWindow: React.FC<DraggableEmbedWindowProps> = ({
 
   // Position: Centre-Right side
   const [position, setPosition] = useState<{ x: number; y: number }>(() => {
-    const compactW = Math.min(580, Math.max(380, Math.floor(window.innerWidth * 0.44)));
-    const compactH = Math.min(460, Math.max(340, Math.floor(window.innerHeight * 0.58)));
-    const rightX = Math.max(20, window.innerWidth - compactW - 28);
-    const centerY = Math.max(30, Math.floor((window.innerHeight - compactH) / 2.2));
+    const targetW = isJackDSQL
+      ? Math.min(390, Math.max(340, window.innerWidth - 32))
+      : Math.min(580, Math.max(380, Math.floor(window.innerWidth * 0.44)));
+    const targetH = isJackDSQL
+      ? Math.min(740, Math.max(520, Math.floor(window.innerHeight * 0.88)))
+      : Math.min(460, Math.max(340, Math.floor(window.innerHeight * 0.58)));
+    const rightX = Math.max(16, window.innerWidth - targetW - 24);
+    const centerY = Math.max(16, Math.floor((window.innerHeight - targetH) / 2));
     return { x: rightX, y: centerY };
   });
 
@@ -49,17 +62,42 @@ export const DraggableEmbedWindow: React.FC<DraggableEmbedWindowProps> = ({
     startH: 0,
   });
 
-  // Reset to centre-right with fresh animation whenever opened
+  // When JackDSQL opens or URL changes, default to mobile orientation if JackDSQL
   useEffect(() => {
     if (isOpen && !isMaximized) {
-      const compactW = Math.min(580, Math.max(380, Math.floor(window.innerWidth * 0.44)));
-      const compactH = Math.min(460, Math.max(340, Math.floor(window.innerHeight * 0.58)));
-      const rightX = Math.max(20, window.innerWidth - compactW - 28);
-      const centerY = Math.max(30, Math.floor((window.innerHeight - compactH) / 2.2));
-      setSize({ width: compactW, height: compactH });
+      const mobileDefault = isJackDSQL;
+      setIsMobileMode(mobileDefault);
+
+      const targetW = mobileDefault
+        ? Math.min(390, Math.max(340, window.innerWidth - 32))
+        : Math.min(580, Math.max(380, Math.floor(window.innerWidth * 0.44)));
+      const targetH = mobileDefault
+        ? Math.min(740, Math.max(520, Math.floor(window.innerHeight * 0.88)))
+        : Math.min(460, Math.max(340, Math.floor(window.innerHeight * 0.58)));
+
+      const rightX = Math.max(16, window.innerWidth - targetW - 24);
+      const centerY = Math.max(16, Math.floor((window.innerHeight - targetH) / 2));
+      setSize({ width: targetW, height: targetH });
       setPosition({ x: rightX, y: centerY });
     }
-  }, [isOpen]);
+  }, [isOpen, url, title, isJackDSQL]);
+
+  const toggleMobileMode = () => {
+    const nextMode = !isMobileMode;
+    setIsMobileMode(nextMode);
+
+    const targetW = nextMode
+      ? Math.min(390, Math.max(340, window.innerWidth - 32))
+      : Math.min(580, Math.max(380, Math.floor(window.innerWidth * 0.44)));
+    const targetH = nextMode
+      ? Math.min(740, Math.max(520, Math.floor(window.innerHeight * 0.88)))
+      : Math.min(460, Math.max(340, Math.floor(window.innerHeight * 0.58)));
+
+    const rightX = Math.max(16, window.innerWidth - targetW - 24);
+    const centerY = Math.max(16, Math.floor((window.innerHeight - targetH) / 2));
+    setSize({ width: targetW, height: targetH });
+    setPosition({ x: rightX, y: centerY });
+  };
 
   // Dragging logic
   const handleMouseDownHeader = (e: React.MouseEvent) => {
@@ -229,6 +267,17 @@ export const DraggableEmbedWindow: React.FC<DraggableEmbedWindowProps> = ({
           {/* Right: Controls */}
           <div className="flex items-center gap-0.5">
             <button
+              onClick={toggleMobileMode}
+              className={`p-1 rounded-md transition-colors ${
+                isMobileMode
+                  ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+              title={isMobileMode ? 'Switch to desktop orientation' : 'Switch to mobile orientation'}
+            >
+              {isMobileMode ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
+            </button>
+            <button
               onClick={reloadIframe}
               className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
               title="Reload"
@@ -300,7 +349,7 @@ export const DraggableEmbedWindow: React.FC<DraggableEmbedWindowProps> = ({
                       Download Resume PDF
                     </a>
                     <a
-                      href="mailto:katheaditya10@gmail.com?subject=Inquiry%20from%20Portfolio&body=Hi%20Aditya,%0D%0A%0D%0AI%20checked%20out%20your%203D%20AI%20portfolio%20and%20would%20love%20to%20connect%20with%20you%20regarding..."
+                      href="mailto:katheaditya10@gmail.com?subject=Inquiry%20from%20Portfolio&body=Hi%20Aditya,%0D%0A%0D%0AI%20checked%20out%20your%20AI%20portfolio%20and%20would%20love%20to%20connect%20with%20you%20regarding..."
                       className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 transition-all group"
                     >
                       <Mail className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
@@ -320,9 +369,9 @@ export const DraggableEmbedWindow: React.FC<DraggableEmbedWindowProps> = ({
               key={iframeKey}
               src={
                 url.includes('github.com')
-                  ? 'http://localhost:8000/api/proxy/github'
+                  ? `${API_BASE}/api/proxy/github`
                   : url.includes('linkedin.com')
-                  ? 'http://localhost:8000/api/proxy/linkedin'
+                  ? `${API_BASE}/api/proxy/linkedin`
                   : url
               }
               title={title}

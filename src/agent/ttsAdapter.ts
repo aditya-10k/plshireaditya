@@ -108,16 +108,26 @@ class TTSAdapter {
     }
 
     const cleanText = text
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`([^`]+)`/g, '$1')
       .replace(/https?:\/\/\S+/g, '')
-      .replace(/[*_#`~\[\]()]/g, '')
+      .replace(/O\([nN]\)/g, 'O of n')
+      .replace(/O\(1\)/g, 'O of 1')
+      .replace(/O\(log\s*n\)/gi, 'O of log n')
+      .replace(/O\(n\^2\)/g, 'O of n squared')
+      .replace(/[*_#~\[\](){}<>=+]/g, ' ')
+      .replace(/\b2sum\b/gi, 'two sum')
+      .replace(/\bSVKM\b/g, 'S V K M')
+      .replace(/\bJackDSQL\b/gi, 'Jack D S Q L')
+      .replace(/\bDJSCE\b/g, 'D J S C E')
+      .replace(/\bATS\b/g, 'A T S')
+      .replace(/\bFCM\b/g, 'F C M')
+      .replace(/\bSQL\b/gi, 'S Q L')
       .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}]/gu, '')
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (!cleanText) {
-      onEnd?.();
-      return;
-    }
+    const speechText = cleanText || 'I have shared the code on screen';
 
     const sessionId = ++this.currentSessionId;
 
@@ -127,7 +137,7 @@ class TTSAdapter {
         const response = await fetch(`${API_BASE}/api/tts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: cleanText }),
+          body: JSON.stringify({ text: speechText }),
         });
 
         if (this.currentSessionId !== sessionId) return;
@@ -205,7 +215,7 @@ class TTSAdapter {
           if (!started) {
             console.info('[TTSAdapter] Backend neural voice unavailable, falling back to Web Speech API');
             this.currentAudio = null;
-            this.speakWithBrowserSpeech(cleanText, onStart, onEnd, onError, onBoundary);
+            this.speakWithBrowserSpeech(speechText, onStart, onEnd, onError, onBoundary);
           } else {
             this.currentAudio = null;
             onError?.();
@@ -216,7 +226,7 @@ class TTSAdapter {
       } catch (err) {
         if (this.currentSessionId !== sessionId) return;
         console.info('[TTSAdapter] Backend neural voice fetch failed, falling back to Web Speech API:', err);
-        this.speakWithBrowserSpeech(cleanText, onStart, onEnd, onError, onBoundary);
+        this.speakWithBrowserSpeech(speechText, onStart, onEnd, onError, onBoundary);
       }
     };
 

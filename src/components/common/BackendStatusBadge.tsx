@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Activity, RefreshCw, Server, CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
+import { Activity, RefreshCw, Server, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
 
 interface BackendStatusBadgeProps {
@@ -11,8 +11,7 @@ export const BackendStatusBadge: React.FC<BackendStatusBadgeProps> = ({
   compact = false,
   className = '',
 }) => {
-  const { status, latencyMs, lastChecked, serviceName, uptimeSeconds, projectsCount, apiUrl, refresh } =
-    useBackendHealth();
+  const { status, latencyMs, refresh } = useBackendHealth();
   const [isOpen, setIsOpen] = useState(false);
   const [isManualChecking, setIsManualChecking] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -149,58 +148,12 @@ export const BackendStatusBadge: React.FC<BackendStatusBadgeProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Endpoint</span>
-              <span className="text-slate-300 truncate max-w-[150px]" title={apiUrl}>
-                {apiUrl.replace('https://', '').replace('http://', '')}
-              </span>
-            </div>
-
-            {serviceName && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Service</span>
-                <span className="text-slate-200">{serviceName}</span>
-              </div>
-            )}
-
             {latencyMs !== null && (
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Latency</span>
                 <span className="text-emerald-400 font-semibold">{latencyMs} ms</span>
               </div>
             )}
-
-            {projectsCount !== undefined && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Indexed Projects</span>
-                <span className="text-slate-200">{projectsCount}</span>
-              </div>
-            )}
-
-            {uptimeSeconds !== undefined && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Backend Uptime</span>
-                <span className="text-slate-200">
-                  {uptimeSeconds > 3600
-                    ? `${(uptimeSeconds / 3600).toFixed(1)}h`
-                    : uptimeSeconds > 60
-                    ? `${Math.floor(uptimeSeconds / 60)}m`
-                    : `${Math.round(uptimeSeconds)}s`}
-                </span>
-              </div>
-            )}
-
-            {lastChecked && (
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-white/5">
-                <span>Last Checked</span>
-                <span>{lastChecked.toLocaleTimeString()}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-3 p-2 rounded-lg bg-white/[0.03] border border-white/5 text-[10px] text-slate-400 leading-relaxed flex items-start gap-1.5">
-            <Info className="w-3 h-3 text-cyan-400 shrink-0 mt-0.5" />
-            <span>{config.desc}</span>
           </div>
         </div>
       )}

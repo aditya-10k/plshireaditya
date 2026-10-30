@@ -120,5 +120,26 @@ export const PROJECTS: Project[] = [
       { label: 'Domain', value: 'Equity Analytics' }
     ],
     featured: false,
+  },
+  {
+    id: 'svkm_educonnect',
+    title: 'SVKM EduConnect',
+    subtitle: 'School Communication & Admin Platform',
+    description: 'Cross-platform school communication and administrative portal built for SVKM institutions, supporting 1,000+ mobile downloads, 40+ teacher profiles, real-time messaging, attendance, and leave workflows.',
+    image: '/projects/matchresume.png',
+    tags: ['Flutter', 'Dart', 'WebSockets', 'FCM', 'REST APIs'],
+    demoUrl: 'https://educonnect.svkm.ac.in/',
+    githubUrl: '',
+    highlights: [
+      '1,000+ downloads across Google Play Store and Apple App Store',
+      '40+ teacher profiles supporting real-time messaging, attendance, and leave workflows',
+      'Unified announcements and appointment scheduling replacing manual paper circulars'
+    ],
+    metrics: [
+      { label: 'Downloads', value: '1,000+' },
+      { label: 'Faculty', value: '40+ Profiles' },
+      { label: 'Platforms', value: 'iOS & Android' }
+    ],
+    featured: true,
   }
 ];

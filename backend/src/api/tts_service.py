@@ -61,12 +61,22 @@ class TTSService:
         return self.cache_dir / f"{h}.{ext}"
 
     def clean_text_for_speech(self, text: str) -> str:
-        """Strip markdown links, URLs, emojis, and code brackets before synthesizing."""
-        cleaned = re.sub(r"https?://\S+", "", text)
-        cleaned = re.sub(r"[*_#`~\[\]()]", "", cleaned)
+        """Strip markdown code blocks, links, URLs, emojis, and brackets before synthesizing."""
+        cleaned = re.sub(r"```[\s\S]*?```", "", text)
+        cleaned = re.sub(r"`([^`]+)`", r"\1", cleaned)
+        cleaned = re.sub(r"https?://\S+", "", cleaned)
+        cleaned = re.sub(r"O\([nN]\)", "O of n", cleaned)
+        cleaned = re.sub(r"O\(1\)", "O of 1", cleaned)
+        cleaned = re.sub(r"\b2sum\b", "two sum", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bJackDSQL\b", "Jack D S Q L", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bSVKM\b", "S V K M", cleaned)
+        cleaned = re.sub(r"\bDJSCE\b", "D J S C E", cleaned)
+        cleaned = re.sub(r"\bATS\b", "A T S", cleaned)
+        cleaned = re.sub(r"\bFCM\b", "F C M", cleaned)
+        cleaned = re.sub(r"[*_#~\[\](){}<>=+]", " ", cleaned)
         cleaned = RE_EMOJI.sub("", cleaned)
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
-        return cleaned
+        return cleaned or "I have shared the snippet on screen"
 
     def _chunk_text(self, text: str, max_chunk_len: int = 450) -> List[str]:
         """
