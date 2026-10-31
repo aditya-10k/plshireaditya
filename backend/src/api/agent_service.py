@@ -162,6 +162,17 @@ PORTFOLIO_TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "stop_screen_share",
+            "description": "Stop sharing your screen or close the current project presentation when the user asks to stop screen sharing or close the presentation.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+            },
+        },
+    },
 ]
 
 
@@ -296,6 +307,9 @@ class PersonaAgentService:
                 "note": "Resume ready for sidebar viewing or download",
             }), action
 
+        elif name == "stop_screen_share":
+            return "Screen share stopped.", {"type": "CLOSE_PROJECT"}
+
         return json.dumps({"error": f"Unknown tool: {name}"}), None
 
     def query(self, prompt: str, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
@@ -338,7 +352,7 @@ class PersonaAgentService:
         if any(p in lower for p in ["what is this website", "tell me about this website", "what is this site", "about this site", "what am i looking at", "what website is this"]) or (lower in ["what is this", "what is this?", "what's this", "what's this?"] and not any("batchshare" in m.get("content", "").lower() for m in (history or []))):
             return {
                 "protocolVersion": "1.0",
-                "text": "This is my AI persona! I built this to represent me, showcase my engineering work and background, and help me get hired. You can chat with me, check out my live project demos in the sidebar window, inspect my code on GitHub, or grab my verified resume. What would you like to explore?",
+                "text": "Welcome to the call! I'm Aditya Kathe. This is my AI persona built to interview with you live on Google Meet, showcase my distributed systems and engineering work, and help me get hired. You can chat with me, ask me to share my screen to walk you through my projects, or check out my verified resume. What would you like to explore?",
                 "emotion": "excited",
                 "speech": {"enabled": True},
                 "actions": [
@@ -346,10 +360,52 @@ class PersonaAgentService:
                 ],
             }
 
-        # 2. Automated Resume Email Dispatch if an email address is provided (literal or spoken/dictated)
+        # 2. Stop Screen Share / Presentation Control
+        is_stop_screen = any(
+            p in lower
+            for p in [
+                "stop your screen share",
+                "stop screen share",
+                "stop sharing",
+                "stop the screen share",
+                "stop presentation",
+                "stop presenting",
+                "screen share stop",
+                "screenshare stop",
+                "screen share band",
+                "screenshare band",
+                "screen share off",
+                "close screen share",
+                "close presentation",
+                "presentation band",
+            ]
+        ) or (
+            ("screen" in lower or "share" in lower or "presentation" in lower)
+            and any(w in lower for w in ["stop", "band", "hatao", "close", "off", "caro", "karo"])
+        )
+
+        if is_stop_screen:
+            is_hindi = any(w in lower for w in ["caro", "karo", "na", "bhai", "band", "hatao", "rok"])
+            resp_text = (
+                "Haan bhai, screen share stop kar diya."
+                if is_hindi
+                else "Sure, let me stop sharing my screen."
+            )
+            return {
+                "protocolVersion": "1.0",
+                "text": resp_text,
+                "emotion": "neutral",
+                "speech": {"enabled": True},
+                "actions": [
+                    {"type": "CLOSE_PROJECT"},
+                    {"type": "SET_EXPRESSION", "expression": "neutral"}
+                ],
+            }
+
+        # 3. Automated Resume Email Dispatch if an email address is provided (literal or spoken/dictated)
         target_email = extract_and_normalize_email(text_query)
-        if not target_email and history:
-            # Check if user just sent an email in response to a previous prompt
+        # ONLY check history if user is explicitly answering an email request
+        if not target_email and history and any(k in lower for k in ["email", "send it", "bhejo", "bhej do", "mail karo", "mail"]):
             for past in reversed(history[-2:]):
                 if past.get("role") == "user":
                     candidate = extract_and_normalize_email(past.get("content", ""))
