@@ -4,26 +4,36 @@ import { transcribeAudio } from '../agent/agentClient';
 interface UseMeetVoiceInputOptions {
   onTranscript: (text: string) => void;
   isEnabled: boolean;
+  sharedStream?: MediaStream | null;
 }
 
 /**
- * Continuous Voice Input with Voice Activity Detection (VAD) & Silence Auto-Commit.
- * Automatically processes speech after 1.2s pause without requiring the user to mute.
+ * Continuous Voice Input with Dual-Engine:
+ * 1. Primary: Browser SpeechRecognition with 1.2s silence auto-commit (instant, zero network latency)
+ * 2. Fallback: MediaRecorder + Groq Whisper-large-v3-turbo on backend /api/transcribe (resilient across network / platform restrictions)
  */
-export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInputOptions) => {
+export const useMeetVoiceInput = ({
+  onTranscript,
+  isEnabled,
+  sharedStream,
+}: UseMeetVoiceInputOptions) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
   const isEnabledRef = useRef<boolean>(isEnabled);
   const onTranscriptRef = useRef(onTranscript);
+  const sharedStreamRef = useRef<MediaStream | null>(sharedStream || null);
+
+  const isListeningWantedRef = useRef<boolean>(false);
   const silenceTimerRef = useRef<any>(null);
-  const accumulatedTranscriptRef = useRef<string>('');
+  const accumulatedTextRef = useRef<string>('');
   const recognitionRef = useRef<any>(null);
+  const useFallbackRef = useRef<boolean>(false);
 
   // VAD MediaRecorder fallback refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const internalStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const vadIntervalRef = useRef<any>(null);
@@ -32,32 +42,47 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
 
   useEffect(() => {
     isEnabledRef.current = isEnabled;
+    if (!isEnabled && isListeningWantedRef.current) {
+      stopListening();
+    }
   }, [isEnabled]);
 
   useEffect(() => {
     onTranscriptRef.current = onTranscript;
   }, [onTranscript]);
 
+  useEffect(() => {
+    sharedStreamRef.current = sharedStream || null;
+  }, [sharedStream]);
+
   const commitTranscript = (text: string) => {
     const clean = text.trim();
-    if (clean.length > 2) {
+    if (clean.length >= 2) {
       onTranscriptRef.current(clean);
     }
-    accumulatedTranscriptRef.current = '';
+    accumulatedTextRef.current = '';
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
+    }
+
+    // Cleanly abort current recognition session so interim buffers are wiped and no duplicate turns fire
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (_) {}
     }
   };
 
   const startListening = () => {
     if (!isEnabledRef.current) return;
+    isListeningWantedRef.current = true;
 
-    const SpeechRecognition =
+    const SpeechRecognitionClass =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
-      startBrowserSpeechRecognition(SpeechRecognition);
+    if (SpeechRecognitionClass && !useFallbackRef.current) {
+      startBrowserSpeechRecognition(SpeechRecognitionClass);
     } else {
       startMediaRecorderVAD();
     }
@@ -69,20 +94,28 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
         try {
           recognitionRef.current.abort();
         } catch (_) {}
+        recognitionRef.current = null;
       }
 
       const recognition = new SpeechRecognitionClass();
       recognitionRef.current = recognition;
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-IN'; // Optimal for Indian English, English, and Hinglish speech
+      recognition.maxAlternatives = 1;
+
+      // Prefer user's browser language, fallback to en-IN for Indian English & tech terms
+      try {
+        recognition.lang = navigator.language || 'en-IN';
+      } catch (_) {
+        recognition.lang = 'en-US';
+      }
 
       recognition.onstart = () => {
         setIsRecording(true);
       };
 
       recognition.onresult = (event: any) => {
-        if (!isEnabledRef.current) return;
+        if (!isEnabledRef.current || !isListeningWantedRef.current) return;
 
         let interim = '';
         let finalChunk = '';
@@ -98,22 +131,21 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
         }
 
         if (finalChunk) {
-          accumulatedTranscriptRef.current = (
-            accumulatedTranscriptRef.current + ' ' + finalChunk
+          accumulatedTextRef.current = (
+            accumulatedTextRef.current + ' ' + finalChunk
           ).trim();
         }
 
-        const candidateText = (accumulatedTranscriptRef.current + ' ' + interim).trim();
+        const candidateText = (accumulatedTextRef.current + ' ' + interim).trim();
 
-        // Reset silence timer on every detected speech fragment
         if (candidateText) {
           if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
           }
 
-          // Automatically commit after 1.2 seconds of silence (no muting needed)
+          // Automatically commit after 1.2s silence pause
           silenceTimerRef.current = setTimeout(() => {
-            if (isEnabledRef.current && candidateText) {
+            if (isEnabledRef.current && isListeningWantedRef.current && candidateText) {
               commitTranscript(candidateText);
             }
           }, 1200);
@@ -122,12 +154,26 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
 
       recognition.onerror = (e: any) => {
         if (e.error === 'no-speech' || e.error === 'aborted') return;
-        console.warn('[useMeetVoiceInput] recognition warning:', e.error);
+
+        // If SpeechRecognition hits network/driver/permission issues in deployed environment, smoothly switch to Whisper VAD
+        if (
+          e.error === 'network' ||
+          e.error === 'audio-capture' ||
+          e.error === 'not-allowed' ||
+          e.error === 'service-not-allowed'
+        ) {
+          useFallbackRef.current = true;
+          try {
+            recognition.abort();
+          } catch (_) {}
+          recognitionRef.current = null;
+          startMediaRecorderVAD();
+        }
       };
 
       recognition.onend = () => {
-        // Auto-restart continuous recognition if mic is still unmuted
-        if (isEnabledRef.current) {
+        // Only restart if listening is actively desired and not switched to fallback
+        if (isListeningWantedRef.current && isEnabledRef.current && !useFallbackRef.current) {
           try {
             recognition.start();
           } catch (_) {}
@@ -137,16 +183,28 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
       };
 
       recognition.start();
-    } catch (err) {
-      console.warn('[useMeetVoiceInput] Failed to start SpeechRecognition, fallback to VAD:', err);
+      setIsRecording(true);
+    } catch (_) {
+      useFallbackRef.current = true;
       startMediaRecorderVAD();
     }
   };
 
   const startMediaRecorderVAD = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      // Use existing shared stream from visualizer to avoid dual microphone locks on Windows
+      let stream = sharedStreamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+        internalStreamRef.current = stream;
+      }
+
       audioChunksRef.current = [];
 
       const AudioContextClass =
@@ -154,8 +212,13 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
       const ctx = new AudioContextClass();
       audioCtxRef.current = ctx;
 
+      if (ctx.state === 'suspended') {
+        await ctx.resume().catch(() => {});
+      }
+
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.3;
       analyserRef.current = analyser;
 
       const source = ctx.createMediaStreamSource(stream);
@@ -163,6 +226,8 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
 
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
         : 'audio/webm';
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
@@ -178,7 +243,7 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         audioChunksRef.current = [];
 
-        if (audioBlob.size > 2000 && hasSpokenRef.current) {
+        if (audioBlob.size > 2500 && hasSpokenRef.current) {
           setIsTranscribing(true);
           try {
             const transcript = await transcribeAudio(audioBlob);
@@ -194,8 +259,13 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
 
         hasSpokenRef.current = false;
 
-        // Restart recording segment if still enabled
-        if (isEnabledRef.current && mediaRecorderRef.current && mediaRecorderRef.current.state === 'inactive') {
+        // Restart recording segment if user is still unmuted
+        if (
+          isListeningWantedRef.current &&
+          isEnabledRef.current &&
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state === 'inactive'
+        ) {
           try {
             mediaRecorderRef.current.start(250);
           } catch (_) {}
@@ -206,19 +276,22 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
       setIsRecording(true);
       hasSpokenRef.current = false;
 
-      // Monitor volume level every 100ms for Voice Activity Detection
+      // Monitor frequency data every 100ms for Voice Activity
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       vadIntervalRef.current = setInterval(() => {
-        if (!analyserRef.current || !isEnabledRef.current) return;
+        if (!analyserRef.current || !isEnabledRef.current || !isListeningWantedRef.current) return;
         analyserRef.current.getByteFrequencyData(dataArray);
 
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-        const avg = sum / dataArray.length;
-        const normalized = avg / 60;
+        let voiceSum = 0;
+        let voiceCount = 0;
+        for (let i = 2; i < Math.min(45, dataArray.length); i++) {
+          voiceSum += dataArray[i];
+          voiceCount++;
+        }
+        const voiceAvg = voiceCount > 0 ? voiceSum / voiceCount : 0;
         const now = Date.now();
 
-        if (normalized > 0.08) {
+        if (voiceAvg > 5.5) {
           hasSpokenRef.current = true;
           lastSpeechTimeRef.current = now;
         } else if (hasSpokenRef.current && now - lastSpeechTimeRef.current > 1200) {
@@ -238,9 +311,10 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
   };
 
   const stopListening = () => {
-    // If pending transcript exists when stopping, commit it immediately
-    if (accumulatedTranscriptRef.current && accumulatedTranscriptRef.current.trim()) {
-      commitTranscript(accumulatedTranscriptRef.current);
+    isListeningWantedRef.current = false;
+
+    if (accumulatedTextRef.current && accumulatedTextRef.current.trim()) {
+      commitTranscript(accumulatedTextRef.current);
     }
 
     if (silenceTimerRef.current) {
@@ -267,9 +341,9 @@ export const useMeetVoiceInput = ({ onTranscript, isEnabled }: UseMeetVoiceInput
       mediaRecorderRef.current = null;
     }
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+    if (internalStreamRef.current) {
+      internalStreamRef.current.getTracks().forEach((track) => track.stop());
+      internalStreamRef.current = null;
     }
 
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {

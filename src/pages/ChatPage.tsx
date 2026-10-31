@@ -88,7 +88,7 @@ export const ChatPage: React.FC<ChatPageProps> = () => {
   const [timeStr, setTimeStr] = useState<string>('');
 
   // Live microphone audio visualizer
-  const { audioLevel, isVoiceDetected } = useMicVisualizer(isVisitorMicOn && meetState === 'in-call');
+  const { audioLevel, isVoiceDetected, stream: micStream } = useMicVisualizer(isVisitorMicOn && meetState === 'in-call');
 
   // Active project transition tracker during speech playback
   const projectTransitionsRef = useRef<{ key: string; index: number; activated: boolean }[]>([]);
@@ -106,35 +106,27 @@ export const ChatPage: React.FC<ChatPageProps> = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Strict noise & junk transcript filter to prevent Whisper hallucinations from background silence
+  // Filter only actual Whisper silence hallucinations without filtering natural greetings
   const isJunkTranscript = (text: string): boolean => {
-    const t = text.trim().toLowerCase();
-    if (t.length < 3) return true;
-    const junkList = [
-      '.',
-      ',',
-      '?',
-      '!',
+    const t = text.trim().toLowerCase().replace(/[.,!?;:]/g, '');
+    if (t.length < 2) return true;
+    const junkPhrases = [
       'thank you',
-      'thank you.',
-      'thank you very much.',
-      'hello',
-      'hello.',
-      'bye',
-      'bye.',
-      'you',
+      'thank you very much',
+      'thanks for watching',
       'subtitles by',
+      'amara org',
       'silence',
-      'hey',
-      'hey.',
+      'you',
     ];
-    if (junkList.includes(t)) return true;
+    if (junkPhrases.includes(t)) return true;
     return false;
   };
 
-  // Voice Input Hook (records visitor speech when mic is unmuted)
+  // Voice Input Hook (records visitor speech when mic is unmuted, shares existing mic stream)
   const { startListening, stopListening } = useMeetVoiceInput({
     isEnabled: isVisitorMicOn && meetState === 'in-call',
+    sharedStream: micStream,
     onTranscript: (text) => {
       if (!isJunkTranscript(text)) {
         handleSendMessage(text);
