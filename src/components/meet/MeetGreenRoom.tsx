@@ -152,11 +152,6 @@ export const MeetGreenRoom: React.FC<MeetGreenRoomProps> = ({
               </div>
             )}
 
-            {/* Top-left name label */}
-            <div className="absolute top-4 left-5 text-sm font-medium text-white tracking-tight drop-shadow-md">
-              Aditya Kathe
-            </div>
-
             {/* Functional Center Controls: Microphone and Camera Toggles */}
             <div className="absolute bottom-4 flex items-center gap-3">
               {/* Mic Toggle Button */}
