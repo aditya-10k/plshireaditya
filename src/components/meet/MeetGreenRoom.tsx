@@ -14,6 +14,9 @@ interface MeetGreenRoomProps {
   setIsMicOn: (on: boolean) => void;
   isCamOn: boolean;
   setIsCamOn: (on: boolean) => void;
+  backendStatus: 'checking' | 'waking' | 'ready' | 'error';
+  wakeSeconds: number;
+  onRetryBackend: () => void;
 }
 
 export const MeetGreenRoom: React.FC<MeetGreenRoomProps> = ({
@@ -22,6 +25,9 @@ export const MeetGreenRoom: React.FC<MeetGreenRoomProps> = ({
   setIsMicOn,
   isCamOn,
   setIsCamOn,
+  backendStatus,
+  wakeSeconds,
+  onRetryBackend,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -194,17 +200,63 @@ export const MeetGreenRoom: React.FC<MeetGreenRoomProps> = ({
             </p>
           </div>
 
-          {/* Big Blue Join Now Pill */}
+          {/* Action Box: Join Button with Strict Backend Warmup Guard */}
           <div className="w-full space-y-3">
-            <button
-              onClick={onJoin}
-              className="w-full sm:w-auto min-w-[180px] px-8 py-3 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-sm tracking-wide transition-all shadow-sm flex items-center justify-center gap-2"
-            >
-              Join now
-            </button>
-            <p className="text-xs text-slate-500 pt-1">
-              Ask about JackDSQL, MatchResume, SVKM EduConnect, or system design
-            </p>
+            {backendStatus === 'ready' ? (
+              <>
+                <button
+                  onClick={onJoin}
+                  className="w-full sm:w-auto min-w-[180px] px-8 py-3 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-sm tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                >
+                  Join now
+                </button>
+                <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 pt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span>Server online • Ready to connect</span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Ask about JackDSQL, MatchResume, SVKM EduConnect, or system design
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  disabled
+                  className="w-full sm:w-auto min-w-[200px] px-8 py-3 rounded-full bg-slate-100 text-slate-400 font-medium text-sm tracking-wide cursor-not-allowed border border-slate-200 flex items-center justify-center gap-2.5 shadow-none select-none"
+                >
+                  <svg className="w-4 h-4 animate-spin text-[#1a73e8]" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  <span>{wakeSeconds > 3 ? `Connecting (${wakeSeconds}s)...` : 'Connecting...'}</span>
+                </button>
+
+                {/* Live Server Booting Card */}
+                <div className="w-full p-3.5 rounded-2xl bg-blue-50/90 border border-blue-200 text-left space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8]">
+                    <span className="w-2 h-2 rounded-full bg-[#1a73e8] animate-ping shrink-0" />
+                    <span>Waking up backend server...</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Free tier hosting spins down after inactivity. Server is booting up (usually ~30s). You will enter as soon as it is live.
+                  </p>
+                  {wakeSeconds > 60 && (
+                    <div className="pt-1">
+                      <button
+                        onClick={onRetryBackend}
+                        className="px-3 py-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
+                      >
+                        Retry probe
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>

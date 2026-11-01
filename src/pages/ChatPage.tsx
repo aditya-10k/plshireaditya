@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MeetGreenRoom } from '../components/meet/MeetGreenRoom';
 import { MeetStage } from '../components/meet/MeetStage';
 import { MeetBottomBar } from '../components/meet/MeetBottomBar';
@@ -13,6 +13,7 @@ import { useMicVisualizer } from '../hooks/useMicVisualizer';
 import { queryAgent } from '../agent/mockAgent';
 import { tts } from '../agent/ttsAdapter';
 import { Message } from '../types';
+import { API_BASE } from '../config/api';
 
 interface ChatPageProps {
   isDark?: boolean;
@@ -87,6 +88,63 @@ export const ChatPage: React.FC<ChatPageProps> = () => {
   const [activeSubtitle, setActiveSubtitle] = useState<string>('');
   const [timeStr, setTimeStr] = useState<string>('');
 
+  // Proactive backend health probe (ensures user never enters call while free-tier backend is cold)
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'waking' | 'ready' | 'error'>('checking');
+  const [wakeSeconds, setWakeSeconds] = useState<number>(0);
+
+  const pingBackend = useCallback(async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        setBackendStatus('ready');
+        return true;
+      } else {
+        setBackendStatus('waking');
+      }
+    } catch (_) {
+      setBackendStatus('waking');
+    }
+    return false;
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let timer: any = null;
+    let secondsTimer: any = null;
+
+    secondsTimer = setInterval(() => {
+      setWakeSeconds((s) => s + 1);
+    }, 1000);
+
+    const check = async () => {
+      const ok = await pingBackend();
+      if (ok && active) {
+        if (secondsTimer) clearInterval(secondsTimer);
+        return;
+      }
+
+      timer = setInterval(async () => {
+        if (!active) return;
+        const success = await pingBackend();
+        if (success && active) {
+          if (timer) clearInterval(timer);
+          if (secondsTimer) clearInterval(secondsTimer);
+        }
+      }, 2500);
+    };
+
+    check();
+
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+      if (secondsTimer) clearInterval(secondsTimer);
+    };
+  }, [pingBackend]);
+
   // Live microphone audio visualizer
   const { audioLevel, isVoiceDetected, stream: micStream } = useMicVisualizer(isVisitorMicOn && meetState === 'in-call');
 
@@ -157,8 +215,9 @@ export const ChatPage: React.FC<ChatPageProps> = () => {
     setIsVisitorCamOn(!isVisitorCamOn);
   };
 
-  // Start call from green room
+  // Start call from green room (strictly guarded until backend is live)
   const handleJoinCall = (initialPresentation?: { url: string; title: string; isMobile?: boolean }) => {
+    if (backendStatus !== 'ready') return;
     meetAudio.playJoinChime();
     setMeetState('in-call');
 
@@ -486,6 +545,9 @@ export const ChatPage: React.FC<ChatPageProps> = () => {
         setIsMicOn={setIsVisitorMicOn}
         isCamOn={isVisitorCamOn}
         setIsCamOn={setIsVisitorCamOn}
+        backendStatus={backendStatus}
+        wakeSeconds={wakeSeconds}
+        onRetryBackend={pingBackend}
       />
     );
   }
